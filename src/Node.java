@@ -14,21 +14,28 @@ public class Node {
 
 
     public Node generateChildNode(int row, int col, char symbol) {
-
-        char[][] newBoard = this.board;
-
-
-        if(this.board[row][col] == ' ') {
-            newBoard[row][col] = symbol;
-            Node child = new Node(newBoard, this, new ArrayList<>(), 0, switchPlayer(this.player));
-            addChildNode(this);
+        if (this.board[row][col] == ' ') { // Check if the move is legal
+            char[][] newBoard = deepCopyBoard(this.board);
+            newBoard[row][col] = symbol; // Make the move
+            Node child = new Node(newBoard, this, 0, switchPlayer(this.player));
+            this.addChildNode(child); // Add the new child node
+            return child;
         }
-        return null;
+        return null; // Return null if the move is not legal
+    }
+
+    // Helper method to deep copy the board
+    private char[][] deepCopyBoard(char[][] original) {
+        char[][] copy = new char[original.length][original[0].length];
+        for (int i = 0; i < original.length; i++) {
+            System.arraycopy(original[i], 0, copy[i], 0, original[i].length);
+        }
+        return copy;
     }
     private String switchPlayer(String currentPlayer) {
         return currentPlayer.equals("max") ? "min" : "max";
     }
-    public Node(char[][] board, Node parent, List<Node> childNodes, int value, String player) {
+    public Node(char[][] board, Node parent, int value, String player) {
         this.board = board;
         this.parent = parent;
         this.childNodes = new ArrayList<>();
@@ -36,7 +43,7 @@ public class Node {
         this.player = player;
     }
 
-    public Node(char[][] board, List<Node> childNodes, int value, String player) {
+    public Node(char[][] board, int value, String player) {
         this.board = board;
         this.childNodes = new ArrayList<>();
         this.value = value;
