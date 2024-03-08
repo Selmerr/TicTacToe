@@ -1,51 +1,122 @@
 import java.util.List;
+import java.util.Scanner;
 
 public class TicTacToe {
 
+    int value;
+
     public static void main(String[] args) {
+
+        Scanner scanner = new Scanner(System.in);
+        TicTacToe game = new TicTacToe();
         char[][] board = {
                 {' ', ' ', ' '},
                 {' ', ' ', ' '},
                 {' ', ' ', ' '}
         };
 
-        // Example move (AI plays 'X')
-        bestMove(board, true); // Assuming true for 'X' as the maximizing player
+        int value;
 
-        // Print board after AI's move
-        printBoard(board);
-    }
+        GameState state = new GameState(board, 'X');
 
-    // Implement bestMove to use Minimax to find and execute the best move
-    public static void bestMove(char[][] board, boolean isMaximizing) {
-        int bestScore = isMaximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
-        int[] move = new int[]{-1, -1};
+        int[][] fieldValues = {{3,2,3},
+                                {2,4,2},
+                                {3,2,3}};
 
-        for (int[] space : Minimax.getAvailableSpaces(board)) {
-            board[space[0]][space[1]] = isMaximizing ? 'X' : 'O'; // Try move
-            int score = Minimax.minimax(board, !isMaximizing); // Evaluate move
-            board[space[0]][space[1]] = ' '; // Undo move
+        int inf = 50;
 
-            if ((isMaximizing && score > bestScore) || (!isMaximizing && score < bestScore)) {
-                bestScore = score;
-                move = space;
+        while(!state.checkWin() && !state.checkDraw()) {
+            System.out.println("Current board");
+            printBoard(state.getBoard());
+
+            if(state.getPlayerToMove() == 'X') {
+                System.out.println("Enter your move (row and column): ");
+                int row = scanner.nextInt();
+                int col = scanner.nextInt();
+                if (row >= 0 && row < 3 && col >= 0 && col < 3 && state.getBoard()[row][col] == ' ') {
+                    Move move = new Move('O', row, col);
+                    state = state.makeMove(move);
+                } else {
+                    System.out.println("Invalid move. Try again.");
+                }
             }
-        }
+            else {
+                // AI's turn
+                System.out.println("AI is making a move...");
+                Move bestMove = game.findBestMove(state);
+                if (bestMove != null) {
+                    state = state.makeMove(bestMove);
+                    System.out.println("AI placed at " + bestMove.row + " " + bestMove.col);
+                } else {
+                    System.out.println("No valid moves for AI. This should not happen if game logic is correct.");
+                }
+            }
 
-        if (move[0] != -1 && move[1] != -1) {
-            board[move[0]][move[1]] = isMaximizing ? 'X' : 'O'; // Execute the best move
         }
+        printBoard(state.getBoard());
+
     }
-
-    // Utility to print the board
-    public static void printBoard(char[][] board) {
-        for (char[] row : board) {
-            for (char cell : row) {
-                System.out.print(cell + " ");
+    // Utility method to print the board
+    private static void printBoard(char[][] board) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                System.out.print(board[i][j] + " ");
             }
             System.out.println();
         }
     }
 
+    public int minimax(GameState state, int depth, boolean isMaximizing) {
+        if (state.checkWin()) {
+            return isMaximizing ? -10 + depth : 10 - depth;
+        }
+        if(state.checkDraw()) {
+            return 0;
+        }
+        if(isMaximizing) {
+            int bestValue = -50;
+            List<Move> moves = state.generateMoves();
+            for (Move move : moves) {
+                GameState newState = state.makeMove(move);
+                value = minimax(newState, depth +1,false);
+                if (value > bestValue) {
+                    bestValue = value;
+                }
 
+            }
+            return bestValue;
+
+        }
+        //Minimizing
+        else {
+            int bestValue = 50;
+            List<Move> moves = state.generateMoves();
+            for (Move move : moves) {
+                GameState newState = state.makeMove(move);
+                value = minimax(newState, depth +1,true);
+                if(value<bestValue) {
+                    bestValue = value;
+                }
+            }
+            return bestValue;
+        }
+    }
+
+    private Move findBestMove(GameState state) {
+        int bestValue = Integer.MIN_VALUE;
+        Move bestMove = null;
+        List<Move> moves = state.generateMoves();
+
+        for (Move move : moves) {// Assuming GameState copy constructor correctly copies the board and toggles the player
+            GameState newState = state.makeMove(move); // Apply move
+            int moveValue = minimax(newState, 0, false); // Assuming 'false' means it's the minimizing player's turn next, adjust as needed
+
+            if (moveValue > bestValue) {
+                bestValue = moveValue;
+                bestMove = move;
+            }
+        }
+
+        return bestMove; // This is the best move found by Minimax
+    }
 }
